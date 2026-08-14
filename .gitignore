@@ -2,16 +2,26 @@
 .venv/
 venv/
 
-# Python cache
+# Python cache and build artifacts
 __pycache__/
 *.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
 
 # Environment variables
 .env
+.env.*
 
 # Node.js
 node_modules/
 dist/
+build/
+coverage/
 
 # OS files
 .DS_Store
+Thumbs.db
