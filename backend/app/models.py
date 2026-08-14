@@ -32,3 +32,5 @@ class CodeExecutionResponse(BaseModel):
     success: bool
     output: str = ""
     error: Optional[str] = None
+    execution_time_ms: float = 0.0
+    stage: str = "executed"

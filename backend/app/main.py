@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.config import APP_NAME, APP_VERSION
 from backend.app.routers.code import router as code_router
@@ -15,6 +16,17 @@ app = FastAPI(
         "them in a development/demo environment, and returning structured results. "
         "The eventual production execution layer will be backed by WebAssembly."
     ),
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(code_router)
