@@ -1,34 +1,74 @@
-"""Execution service for the development/demo backend layer.
+"""Execution service for the WASMBOX backend.
 
-The current execution implementation is intentionally simple and is intended for
-local development and demonstration only. It captures stdout and Python runtime
-exceptions and returns them in a structured response. The planned WASM layer will
-later provide a more isolated execution architecture, but the FastAPI API should
-remain stable while that environment is introduced.
+This service invokes a controlled Node.js/Pyodide worker that runs Python within
+WebAssembly. The implementation is intentionally simple and limited to a student
+prototype; it is not a production sandbox or a general Python execution system.
 """
 
 from __future__ import annotations
 
-import io
-import traceback
-from contextlib import redirect_stdout
-from typing import Any
+import time
 
+from backend.app.config import MAX_CODE_LENGTH
 from backend.app.models import CodeExecutionResponse
+from backend.app.services.validator import ValidationError, validate_python_code
+from backend.app.services.wasm_runtime import WorkerExecutionError, execute_pyodide_code
 
 
 def execute_python_code(source_code: str) -> CodeExecutionResponse:
-    """Execute submitted Python source code in a controlled local demo environment.
+    """Validate, run, and return structured results for submitted Python code."""
+    started_at = time.perf_counter()
 
-    This is not a production-grade sandbox. It is a development/demo execution
-    layer that is easier to replace later with a WASM-based runtime.
-    """
-    buffer = io.StringIO()
+    if not source_code or not source_code.strip():
+        elapsed_ms = (time.perf_counter() - started_at) * 1000
+        return CodeExecutionResponse(
+            success=False,
+            output="",
+            error="Code cannot be empty or whitespace only.",
+            execution_time_ms=elapsed_ms,
+            stage="validation",
+        )
+
+    if len(source_code.strip()) > MAX_CODE_LENGTH:
+        elapsed_ms = (time.perf_counter() - started_at) * 1000
+        return CodeExecutionResponse(
+            success=False,
+            output="",
+            error=f"Code exceeds the allowed size limit of {MAX_CODE_LENGTH} characters.",
+            execution_time_ms=elapsed_ms,
+            stage="validation",
+        )
 
     try:
-        with redirect_stdout(buffer):
-            exec(compile(source_code, "<wasmbox-input>", "exec"), {"__builtins__": __builtins__})
-        return CodeExecutionResponse(success=True, output=buffer.getvalue(), error=None)
-    except Exception as exc:  # pragma: no cover - broad catch needed for execution behavior
-        error_message = traceback.format_exc().strip() or str(exc)
-        return CodeExecutionResponse(success=False, output="", error=error_message)
+        validate_python_code(source_code)
+    except ValidationError as exc:
+        elapsed_ms = (time.perf_counter() - started_at) * 1000
+        return CodeExecutionResponse(
+            success=False,
+            output="",
+            error=str(exc),
+            execution_time_ms=elapsed_ms,
+            stage="validation",
+        )
+
+    try:
+        result = execute_pyodide_code(source_code)
+        elapsed_ms = (time.perf_counter() - started_at) * 1000
+        return CodeExecutionResponse(
+            success=result["success"],
+            output=result["output"],
+            error=result["error"],
+            execution_time_ms=elapsed_ms,
+            stage="completed" if result["success"] else "runtime",
+        )
+    except WorkerExecutionError as exc:
+        elapsed_ms = (time.perf_counter() - started_at) * 1000
+        message = str(exc)
+        stage = "timeout" if "time limit" in message.lower() else "wasm"
+        return CodeExecutionResponse(
+            success=False,
+            output="",
+            error=message,
+            execution_time_ms=elapsed_ms,
+            stage=stage,
+        )

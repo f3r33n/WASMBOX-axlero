@@ -15,6 +15,8 @@ def test_execute_success() -> None:
     assert data["success"] is True
     assert "Hello" in data["output"]
     assert data["error"] is None
+    assert data["stage"] == "completed"
+    assert isinstance(data["execution_time_ms"], (int, float))
 
 
 def test_execute_empty_code_rejected() -> None:
@@ -31,3 +33,4 @@ def test_execute_runtime_error_handled() -> None:
     assert data["success"] is False
     assert data["output"] == ""
     assert "unknown_variable" in data["error"]
+    assert data["stage"] in {"runtime", "wasm"}
