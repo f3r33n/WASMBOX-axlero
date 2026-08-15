@@ -103,3 +103,5 @@ Content-Type: application/json
 - Phase 1: FastAPI backend foundation and demo runtime scaffolding
 - Phase 2A: Pyodide/WebAssembly execution bridge in Node.js
 - Phase 2B: validation, timeout handling, metadata, and safer demo execution flow
+
+- Tested the WASMBOX prototype with the Pyodide runtime and developer portal. Verified that the frontend loads successfully and the backend connection is active.
