@@ -52,7 +52,7 @@ The validation layer rejects patterns such as:
 - builtins such as `eval`, `exec`, `compile`, `open`, `__import__`
 - unsupported demo-only constructs such as function definitions, loops, and attribute access
 
-## Setup guide
+## Setup 
 
 From the repository root:
 
