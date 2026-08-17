@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import ast
 
+
 BLOCKED_IMPORTS = {
     "os",
     "sys",
@@ -96,7 +97,23 @@ class RestrictedCodeValidator(ast.NodeVisitor):
         raise ValidationError("Indexing is not allowed in the WASMBOX demo environment.")
 
     def visit_Compare(self, node: ast.Compare) -> None:  # noqa: N802
-        raise ValidationError("Comparison expressions are not allowed in this demo environment.")
+        """Allow basic comparison operators used by normal conditional logic."""
+        allowed_operators = (
+            ast.Lt,
+            ast.LtE,
+            ast.Gt,
+            ast.GtE,
+            ast.Eq,
+            ast.NotEq,
+        )
+
+        for operator in node.ops:
+            if not isinstance(operator, allowed_operators):
+                raise ValidationError(
+                    "This comparison operator is not allowed in the WASMBOX demo environment."
+                )
+
+        self.generic_visit(node)
 
     def generic_visit(self, node: ast.AST) -> None:
         super().generic_visit(node)
