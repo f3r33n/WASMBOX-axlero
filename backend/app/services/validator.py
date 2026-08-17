@@ -54,8 +54,7 @@ class RestrictedCodeValidator(ast.NodeVisitor):
     def visit_Attribute(self, node: ast.Attribute) -> None:  # noqa: N802
         raise ValidationError("Attribute access is not allowed in the WASMBOX demo environment.")
 
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:  # noqa: N802
-        raise ValidationError("Function definitions are not allowed in the WASMBOX demo environment.")
+   
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:  # noqa: N802
         raise ValidationError("Async functions are not allowed in the WASMBOX demo environment.")
@@ -69,8 +68,7 @@ class RestrictedCodeValidator(ast.NodeVisitor):
     def visit_While(self, node: ast.While) -> None:  # noqa: N802
         raise ValidationError("While loops are not allowed in the WASMBOX demo environment.")
 
-    def visit_For(self, node: ast.For) -> None:  # noqa: N802
-        raise ValidationError("For loops are not allowed in the WASMBOX demo environment.")
+    
 
     def visit_AsyncFor(self, node: ast.AsyncFor) -> None:  # noqa: N802
         raise ValidationError("Async loops are not allowed in the WASMBOX demo environment.")
@@ -82,7 +80,7 @@ class RestrictedCodeValidator(ast.NodeVisitor):
         raise ValidationError("Async context managers are not allowed in the WASMBOX demo environment.")
 
     def visit_List(self, node: ast.List) -> None:  # noqa: N802
-        raise ValidationError("List literals are not allowed in the WASMBOX demo environment.")
+        self.generic_visit(node)
 
     def visit_Dict(self, node: ast.Dict) -> None:  # noqa: N802
         raise ValidationError("Dictionary literals are not allowed in the WASMBOX demo environment.")
@@ -94,7 +92,7 @@ class RestrictedCodeValidator(ast.NodeVisitor):
         raise ValidationError("Tuple literals are not allowed in the WASMBOX demo environment.")
 
     def visit_Subscript(self, node: ast.Subscript) -> None:  # noqa: N802
-        raise ValidationError("Indexing is not allowed in the WASMBOX demo environment.")
+        self.generic_visit(node)
 
     def visit_Compare(self, node: ast.Compare) -> None:  # noqa: N802
         """Allow basic comparison operators used by normal conditional logic."""
