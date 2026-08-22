@@ -30,7 +30,7 @@ The project now includes:
 - execution metadata
 - automated pytest coverage
 
-## Current Security Model 
+## Current Security Model ()
 
 This is an educational/demo prototype. The system does not directly run submitted Python code on the host using `exec()`. Instead, the project delegates execution to a Node.js subprocess that initializes Pyodide in WebAssembly. Before execution, the backend validates code against a small blocked-pattern list and enforces a timeout and maximum length.
 
