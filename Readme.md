@@ -2,7 +2,7 @@
 
 WASMBOX is a lightweight prototype for executing restricted Python snippets through a FastAPI backend and a Pyodide/WebAssembly execution bridge.
 
-## Architecture Overview
+## Architecture Overview ()
 
 Frontend
 ↓
