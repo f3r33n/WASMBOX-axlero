@@ -29,28 +29,33 @@ The project now includes:
 - output and error capture
 - execution metadata
 - automated pytest coverage
-
 ## Current Security Model
 
-This is an educational/demo prototype. The system does not directly run submitted Python code on the host using `exec()`. Instead, the project delegates execution to a Node.js subprocess that initializes Pyodide in WebAssembly. Before execution, the backend validates code against a small blocked-pattern list and enforces a timeout and maximum length.
+This is an educational/demo prototype. Submitted Python code is not executed directly on the host; the backend delegates execution to a Node.js subprocess that initializes Pyodide in WebAssembly. Before execution, the backend validates code against a blocked-pattern list and enforces simple runtime limits (timeout and maximum code length).
 
 This is not a production-grade sandbox and should not be treated as complete isolation for arbitrary Python code.
 
-## Supported Approach
+## Supported Approach (Demo)
 
-- basic arithmetic statements
-- integer variables
-- print() output
-- simple Python snippets in a controlled environment
-- structured execution feedback
+- basic arithmetic and expression evaluation
+- integer and simple variable usage
+- `print()` output
+- function definitions, `if`/`else`, `for` and `while` loops (controlled)
+- list literals and basic list indexing
+- simple comparisons used in conditional logic
+- structured execution feedback from the Pyodide worker
 
-## Blocked Patterns
+## Blocked Patterns and Dangerous Operations
 
-The validation layer rejects patterns such as:
+The validation layer rejects clearly risky or host-access patterns such as:
 
-- imports like `os`, `subprocess`, `socket`, `ctypes`, etc.
-- builtins such as `eval`, `exec`, `compile`, `open`, `__import__`
-- unsupported demo-only constructs such as function definitions, loops, and attribute access
+- imports (no external module imports are allowed)
+- blocked modules: `os`, `sys`, `subprocess`, `socket`, `pathlib`, `shutil`, `ctypes`, `multiprocessing`
+- builtins such as `eval`, `exec`, `compile`, `open`, and `__import__`
+- attribute access (e.g. `obj.attr`) to avoid reaching host or runtime internals
+- async functions, class definitions, lambdas, async loops, and context managers
+
+The intent is to allow common Python learning constructs (functions, loops, lists, indexing, comparisons) while preventing filesystem, process, and attribute-level access to the runtime.
 
 ## Setup
 
@@ -70,7 +75,7 @@ cd ..
 uvicorn backend.app.main:app --reload
 ```
 
-The API documentation is available at:
+API docs:
 
 - http://127.0.0.1:8000/docs
 - http://127.0.0.1:8000/redoc
@@ -102,4 +107,4 @@ Content-Type: application/json
 
 - Phase 1: FastAPI backend foundation and demo runtime scaffolding
 - Phase 2A: Pyodide/WebAssembly execution bridge in Node.js
-- Phase 2B: validation, timeout handling, metadata, and safer demo execution flow
+- Phase 2B: validation, timeout handling, execution metadata, and safer demo execution flow
