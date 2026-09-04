@@ -1,0 +1,137 @@
+[1mdiff --git a/backend/app/services/validator.py b/backend/app/services/validator.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..978cb71[m
+[1m--- /dev/null[m
+[1m+++ b/backend/app/services/validator.py[m
+[36m@@ -0,0 +1,131 @@[m
+[32m+[m[32m"""Application-level validation for submitted Python snippets.[m
+[32m+[m
+[32m+[m[32mThis is intentionally lightweight and designed for a student demo project. It is[m
+[32m+[m[32mnot a production security boundary and does not claim to be a complete sandbox.[m
+[32m+[m[32m"""[m
+[32m+[m
+[32m+[m[32mfrom __future__ import annotations[m
+[32m+[m
+[32m+[m[32mimport ast[m
+[32m+[m
+[32m+[m
+[32m+[m[32mBLOCKED_IMPORTS = {[m
+[32m+[m[32m    "os",[m
+[32m+[m[32m    "sys",[m
+[32m+[m[32m    "subprocess",[m
+[32m+[m[32m    "socket",[m
+[32m+[m[32m    "pathlib",[m
+[32m+[m[32m    "shutil",[m
+[32m+[m[32m    "ctypes",[m
+[32m+[m[32m    "multiprocessing",[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mBLOCKED_BUILTINS = {"eval", "exec", "compile", "open", "__import__"}[m
+[32m+[m
+[32m+[m
+[32m+[m[32mclass ValidationError(ValueError):[m
+[32m+[m[32m    """Raised when submitted code violates the demo validation policy."""[m
+[32m+[m
+[32m+[m
+[32m+[m[32mclass RestrictedCodeValidator(ast.NodeVisitor):[m
+[32m+[m[32m    """Reject clearly unsafe or unsupported Python patterns for the demo runtime."""[m
+[32m+[m
+[32m+[m[32m    def visit_Import(self, node: ast.Import) -> None:  # noqa: N802[m
+[32m+[m[32m        for alias in node.names:[m
+[32m+[m[32m            module_name = alias.name.split(".")[0][m
+[32m+[m[32m            if module_name in BLOCKED_IMPORTS:[m
+[32m+[m[32m                raise ValidationError(f"Import of '{module_name}' is not allowed in the WASMBOX demo environment.")[m
+[32m+[m[32m            raise ValidationError("Imports are not allowed in the WASMBOX demo environment.")[m
+[32m+[m
+[32m+[m[32m    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # noqa: N802[m
+[32m+[m[32m        module_name = node.module.split(".")[0] if node.module else ""[m
+[32m+[m[32m        if module_name in BLOCKED_IMPORTS:[m
+[32m+[m[32m            raise ValidationError(f"Import of '{module_name}' is not allowed in the WASMBOX demo environment.")[m
+[32m+[m[32m        raise ValidationError("Imports are not allowed in the WASMBOX demo environment.")[m
+[32m+[m
+[32m+[m[32m    def visit_Call(self, node: ast.Call) -> None:  # noqa: N802[m
+[32m+[m[32m        func = node.func[m
+[32m+[m[32m        if isinstance(func, ast.Name) and func.id in BLOCKED_BUILTINS:[m
+[32m+[m[32m            raise ValidationError(f"Calling '{func.id}' is not allowed in the WASMBOX demo environment.")[m
+[32m+[m[32m        if isinstance(func, ast.Attribute):[m
+[32m+[m[32m            raise ValidationError("Attribute access is not allowed in the WASMBOX demo environment.")[m
+[32m+[m[32m        self.generic_visit(node)[m
+[32m+[m
+[32m+[m[32m    def visit_Attribute(self, node: ast.Attribute) -> None:  # noqa: N802[m
+[32m+[m[32m        raise ValidationError("Attribute access is not allowed in the WASMBOX demo environment.")[m
+[32m+[m
+[32m+[m[41m   [m
+[32m+[m
+[32m+[m[32m    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:  # noqa: N802[m
+[32m+[m[32m        raise ValidationError("Async functions are not allowed in the WASMBOX demo environment.")[m
+[32m+[m
+[32m+[m[32m    def visit_ClassDef(self, node: ast.ClassDef) -> None:  # noqa: N802[m
+[32m+[m[32m        raise ValidationError("Class definitions are not allowed in the WASMBOX demo environment.")[m
+[32m+[m
+[32m+[m[32m    def visit_Lambda(self, node: ast.Lambda) -> None:  # noqa: N802[m
+[32m+[m[32m        raise ValidationError("Lambda expressions are not allowed in the WASMBOX demo environment.")[m
+[32m+[m
+[32m+[m[32m    def visit_While(self, node: ast.While) -> None:  # noqa: N802[m
+[32m+[m[32m        raise ValidationError("While loops are not allowed in the WASMBOX demo environment.")[m
+[32m+[m
+[32m+[m[41m    [m
+[32m+[m
+[32m+[m[32m    def visit_AsyncFor(self, node: ast.AsyncFor) -> None:  # noqa: N802[m
+[32m+[m[32m        raise ValidationError("Async loops are not allowed in the WASMBOX demo environment.")[m
+[32m+[m
+[32m+[m[32m    def visit_With(self, node: ast.With) -> None:  # noqa: N802[m
+[32m+[m[32m        raise ValidationError("With statements are not allowed in the WASMBOX demo environment.")[m
+[32m+[m
+[32m+[m[32m    def visit_AsyncWith(self, node: ast.AsyncWith) -> None:  # noqa: N802[m
+[32m+[m[32m        raise ValidationError("Async context managers are not allowed in the WASMBOX demo environment.")[m
+[32m+[m
+[32m+[m[32m    def visit_List(self, node: ast.List) -> None:  # noqa: N802[m
+[32m+[m[32m        self.generic_visit(node)[m
+[32m+[m
+[32m+[m[32m    def visit_Dict(self, node: ast.Dict) -> None:  # noqa: N802[m
+[32m+[m[32m        raise ValidationError("Dictionary literals are not allowed in the WASMBOX demo environment.")[m
+[32m+[m
+[32m+[m[32m    def visit_Set(self, node: ast.Set) -> None:  # noqa: N802[m
+[32m+[m[32m        raise ValidationError("Set literals are not allowed in the WASMBOX demo environment.")[m
+[32m+[m
+[32m+[m[32m    def visit_Tuple(self, node: ast.Tuple) -> None:  # noqa: N802[m
+[32m+[m[32m        raise ValidationError("Tuple literals are not allowed in the WASMBOX demo environment.")[m
+[32m+[m
+[32m+[m[32m    def visit_Subscript(self, node: ast.Subscript) -> None:  # noqa: N802[m
+[32m+[m[32m        self.generic_visit(node)[m
+[32m+[m
+[32m+[m[32m    def visit_Compare(self, node: ast.Compare) -> None:  # noqa: N802[m
+[32m+[m[32m        """Allow basic comparison operators used by normal conditional logic."""[m
+[32m+[m[32m        allowed_operators = ([m
+[32m+[m[32m            ast.Lt,[m
+[32m+[m[32m            ast.LtE,[m
+[32m+[m[32m            ast.Gt,[m
+[32m+[m[32m            ast.GtE,[m
+[32m+[m[32m            ast.Eq,[m
+[32m+[m[32m            ast.NotEq,[m
+[32m+[m[32m        )[m
+[32m+[m
+[32m+[m[32m        for operator in node.ops:[m
+[32m+[m[32m            if not isinstance(operator, allowed_operators):[m
+[32m+[m[32m                raise ValidationError([m
+[32m+[m[32m                    "This comparison operator is not allowed in the WASMBOX demo environment."[m
+[32m+[m[32m                )[m
+[32m+[m
+[32m+[m[32m        self.generic_visit(node)[m
+[32m+[m
+[32m+[m[32m    def generic_visit(self, node: ast.AST) -> None:[m
+[32m+[m[32m        super().generic_visit(node)[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef validate_python_code(source_code: str) -> None:[m
+[32m+[m[32m    """Validate that the submitted code falls within the supported demo subset."""[m
+[32m+[m[32m    if not source_code or not source_code.strip():[m
+[32m+[m[32m        raise ValidationError("Code cannot be empty or whitespace only.")[m
+[32m+[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        tree = ast.parse(source_code, mode="exec")[m
+[32m+[m[32m    except SyntaxError as exc:[m
+[32m+[m[32m        raise ValidationError(f"Invalid Python syntax: {exc.msg}") from exc[m
+[32m+[m
+[32m+[m[32m    validator = RestrictedCodeValidator()[m
+[32m+[m[32m    validator.visit(tree)[m
